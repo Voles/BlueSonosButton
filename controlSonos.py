@@ -6,8 +6,8 @@ import json
 import evdev
 
 # Modify your variable here
-roomname = "Arbeitszimmer" # roomname your Sonos Speaker is located
-buttonname = "Satechi Media Button" # also tested with "BT-005"
+roomname = "Living" # roomname your Sonos Speaker is located
+buttonname = "Satechi Media Button Consumer Control" # also tested with "BT-005"
 host = "localhost" # when installed on the same host use localhost
 port = "5005" #default 5005
 key2commandPairs = {"KEY_PLAYPAUSE":"playpause",
