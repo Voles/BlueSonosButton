@@ -4,6 +4,8 @@ import sys
 import os
 import json
 import evdev
+import logging
+import time
 
 # Modify your variable here
 roomname = "Living" # roomname your Sonos Speaker is located
@@ -13,9 +15,15 @@ port = "5005" #default 5005
 key2commandPairs = {"KEY_PLAYPAUSE":"playpause",
                     "KEY_NEXTSONG":"next",
                     "KEY_PREVIOUSSONG":"previous",
-                    "KEY_VOLUMEUP":"volume/+2",
-                    "KEY_VOLUMEDOWN":"volume/-2"}
+                    "KEY_VOLUMEUP":"groupVolume/+1",
+                    "KEY_VOLUMEDOWN":"groupVolume/-1"}
 # ---------------------------------------------------------------------
+
+def exit_program():
+    try:
+        sys.exit(1)
+    except SystemExit:
+        os._exit(0)
 
 
 def evaluateResponse(response):
@@ -26,18 +34,18 @@ def evaluateResponse(response):
         result = u'\u2713'.encode('utf8')
     return result
 
-def do_main_program():
-    print "Script started. Searching for " + buttonname + "..."
+def do_main_program(logger):
+    logger.info("Script started. Searching for " + buttonname + "...")
     try:
         while True:
                 devices = [evdev.InputDevice(fn) for fn in evdev.list_devices()]
                 if len(devices) == 0:
-                    print("No devices found, try running with sudo")
-                    sys.exit(1)
+                    logger.debug("No devices found, try running with sudo")
+                    time.sleep(5)
 
                 for device in devices:
                     if device.name == buttonname:
-                        print("Button found: " + str(device))
+                        logger.info("Button found: " + str(device))
                         url = "http://" + host + ":" + port + "/"+ roomname
                         try:
                             device.grab()
@@ -46,20 +54,31 @@ def do_main_program():
                                      data = evdev.categorize(event)  # Save the event temporarily to introspect it
                                      if data.keystate == 1:  # Down events only
                                         if data.keycode in key2commandPairs:
-                                            print "Received event " + data.keycode + " -> Sending command " + key2commandPairs[data.keycode],
-                                            response = urllib2.urlopen(url + "/" + key2commandPairs[data.keycode]).read()
-                                            print  evaluateResponse(response)
+                                            logger.info("Received event " + data.keycode + " -> Sending command " + key2commandPairs[data.keycode])
+
+                                            try:
+                                                response = urllib2.urlopen(url + "/" + key2commandPairs[data.keycode]).read()
+                                                logger.debug(evaluateResponse(response))
+                                            except Exception, e:
+                                                logger.error("Sonos HTTP API: %s", e)
                                         else:
-                                            print u'You Pressed the {} key!'.format(data.keycode)  # Print it all out!
+                                            logger.info("You Pressed the " + data.keycode + " key!")
                         except Exception, e:
-                            print e
-                            print("Lost connection! Start searching...")
-                            pass
+                            logger.error("Unexpected: %s", e)
+                            exit_program()
                     else:
                         pass
     except KeyboardInterrupt:
-        print 'Exited'
-        try:
-            sys.exit(1)
-        except SystemExit:
-            os._exit(0)
+        logger.debug('Exited')
+        exit_program()
+
+if __name__ == "__main__":
+    formatter = logging.Formatter(fmt='%(asctime)s %(levelname)-8s %(message)s',
+                                  datefmt='%Y-%m-%d %H:%M:%S')
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
+    do_main_program(logger)
