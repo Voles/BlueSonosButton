@@ -1,100 +1,77 @@
-# BlueSonosButton
-This script lets you control you SONOS speakers with a Bluetooth Button.
-
-<img src="https://github.com/SvenSommer/BlueSonosButton/blob/master/bluetoothSonosButton.jpg?raw=true" height="450px">
-
-Sending commands from a cheap bluetooth button to a SONOS speaker is achived by using a RaspberryPi. <br> Once the paired bluetooth button sends a command to the Pi, it's forwarded to an HTTP based Api controlling the Sonos Speakers.
-
-## Usage
-
-### 1. Install the script and dependencies
-
-Clone this repository:
-````
-git clone https://github.com/SvenSommer/BlueSonosButton.git
-
-````
-
-Follow the [installation instructions](http://python-evdev.readthedocs.io/en/latest/install.html#) for your OS to get ``python-evdev``.<br>
-I tested it with *Debian* on a *RaspberryPi 3 model B* using:
-````
-sudo apt-get install python-dev python-pip gcc
-sudo apt-get install linux-headers-$(uname -r)
-sudo pip install evdev
-
-````
-
-### 2. Install SONOS HTTP API
-The magic controlling the sonos speaker is done with by the amazing SONOS HTTP API bridge by *jishi*.<br>
-*(If you're interested, you can choose to install the api on a different host.)*
-
-```
-git clone https://github.com/jishi/node-sonos-http-api.git
-cd node-sonos-http-api
-npm install --production
-npm start
-
-```
-
-Once the *SONOS API* api is running you should be able to get information about your sonos system by runnig ``http://insertSonosApiHostIp:5005/``
-
-**Important:** Keep the api running!
-### 3. Pair your bluetooth button
-Pair and connect the bluetooth button with your RaspberryPi:
-````
-bluetoothctl
-agent on
-scan on
-````
-If you have found the button, use the address to trust, pair and connect to it:
-````
-trust 0C:FC:83:1F:28:6F
-pair 0C:FC:83:1F:28:6F
-connect 0C:FC:83:1F:28:6F
-
-````
-**Important:** Note the name of your button, it's need for the adjustements of the script.
+# Satechi Media Button with Sonos
 
 
-### 4. Configure the script.
-Open the and edit ``controlSonos.py`` in the cloned BlueSonosButton folder to your needs. <br>
+## Install Node
 
-Global variables are:
-```python
-# Modify your variable here
-roomname = "Kitchen" # roomname your Sonos Speaker is located
-buttonname = "Satechi Media Button" # also tested with "BT-005"
-host = "localhost" # when installed on the same host use localhost
-port = "5005" #default 5005
-key2commandPairs = {"KEY_PLAYPAUSE":"playpause", # edit your button:command pairs
-                    "KEY_NEXTSONG":"next",
-                    "KEY_PREVIOUSSONG":"previous",
-                    "KEY_VOLUMEUP":"volume/+2",
-                    "KEY_VOLUMEDOWN":"volume/-2"}
-# -------------------------------------------------
+	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash
+	source /home/pi/.bashrc 
+	nvm install 12
+	nvm use 12
 
-```
 
-In addition you have to configure the buttons and the
+## Setup Bluetooth connection with Satechi device
 
-### 5. Run the script
-1. Make sure the SONOS HTTP API is still running
-2. Start the script with ``python controlSonos.py``
+	sudo bluetoothctl
+	power on
+	agent on
+	default-agent
+	scan on
+	pair <:xx:xx:...>
 
-If everything is working as exspected you should see something like:
-````shell
-pi@raspberrypi:~/scripts/BlueSonosButton $ python controlSonos.py
-Script started. Searching for Satechi Media Button...
-Button found: device /dev/input/event1, name "Satechi Media Button", phys "b8:27:eb:63:ee:5f"
-Received event KEY_PLAYPAUSE -> Sending command playpause ✓
-Received event KEY_VOLUMEUP -> Sending command volume/+2 ✓
-Received event KEY_VOLUMEDOWN -> Sending command volume/-2 ✓
-Received event KEY_PREVIOUSSONG -> Sending command previous ✓
-Received event KEY_NEXTSONG -> Sending command next ✓
-Received event KEY_PLAYPAUSE -> Sending command playpause ✓
-````
+> My device ID was 'DC:2C:26:D1:E1:00' when initially setting up shop.
+> You possibly have to trust the device manually. This can be done using the 'trust' command from 'bluetoothctl'.
 
-### 6. (Optional) Buy me a beer ;-)
-If you liked my work, please tell me! And I wouldn't say no, if you'd like to buy me a [(virtual) beer](https://www.patreon.com/robhoff).
 
-Further projects I've created are available on my blog [www.robstechlog.com](www.robstechlog.com).
+## Clone Sonos HTTP API
+
+	git clone https://github.com/jishi/node-sonos-http-api.git
+	cd node-sonos-http-api
+	npm install --production
+	npm install -g pm2
+
+
+## Setup Python
+
+	sudo apt-get update
+	sudo apt-get install python-dev python-pip gcc
+	sudo apt-get install linux-headers-$(uname -r)
+	sudo pip install evdev==1.2.0
+	sudo pip install python-daemon
+
+	git clone https://github.com/Voles/BlueSonosButton.git
+	cd BlueSonosButton
+
+
+## Run the scripts
+
+	cd node-sonos-http-api
+	NODE_ENV=production pm2 start server.js
+
+	cd BlueSonosButton
+	python run.py
+
+
+## Todo
+	
+	1. ~~Run the Node and Python commands in the background.~~
+	1. ~~Python script should not exit when the bluetooth device disconnects.~~
+	1. Restart NPM & Python commands on reboot (https://github.com/Unitech/pm2#startup-scripts-generation).
+	1. Loop through favorites when pressing previous/next
+	1. Monitor from time to time :-)
+
+## Helpful commands
+
+	kill -11 <pid>
+	ps -A | grep python
+	tail -f output.log
+
+	pm2 describe <id>
+	pm2 list
+	pm2 monit
+	pm2 stop <id>
+	pm2 delete <id>
+
+
+## Sources
+
+- [Original instructions](https://github.com/SvenSommer/BlueSonosButton)
