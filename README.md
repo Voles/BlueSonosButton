@@ -56,7 +56,8 @@
 	1. ~~Run the Node and Python commands in the background.~~
 	1. ~~Python script should not exit when the bluetooth device disconnects.~~
 	1. Restart NPM & Python commands on reboot (https://github.com/Unitech/pm2#startup-scripts-generation).
-	1. Loop through favorites when pressing previous/next
+	1. ~~Loop through favorites when pressing previous/next~~
+	1. Detect selected favorite on boot
 	1. Monitor from time to time :-)
 
 ## Helpful commands
