@@ -65,7 +65,7 @@ def do_main_program(logger):
                                             logger.info("You Pressed the " + data.keycode + " key!")
                         except Exception, e:
                             logger.error("Unexpected: %s", e)
-                            exit_program()
+                            pass
                     else:
                         pass
     except KeyboardInterrupt:
